@@ -1,3 +1,9 @@
 .gradle/
 .vscode/
 build/
+.classpath
+.project
+.settings/
+Deposit.class
+Withdraw.class
+bin/
