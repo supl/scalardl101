@@ -6,8 +6,8 @@ repositories {
 }
 
 dependencies {
-    compile group: 'com.google.inject', name: 'guice', version: '4.0'
-    compile group: 'com.scalar-labs', name: 'scalardl-client-sdk', version: '1.0.0-alpha.20190222'
+    implementation group: 'com.google.inject', name: 'guice', version: '5.0.1'
+    implementation group: 'com.scalar-labs', name: 'scalardl-java-client-sdk', version: '2.2.0'
 }
 
 application {
