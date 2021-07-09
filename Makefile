@@ -1,3 +1,6 @@
 all:
-	@rm ./*.class
-	@./gradlew clean build installDist
+	@./gradlew build installDist
+
+clean:
+	-@rm -f *.class
+	@./gradlew clean
