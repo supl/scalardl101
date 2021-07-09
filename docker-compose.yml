@@ -1,0 +1,57 @@
+version: "3.6"
+
+services:
+  cassandra:
+    image: cassandra:3.11
+    container_name: cassandra
+    volumes:
+      - cassandra:/var/lib/cassandra
+    environment:
+      - CASSANDRA_DC=dc1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+
+  scalardl-schema-loader-cassandra:
+    image: ghcr.io/scalar-labs/scalardl-schema-loader-cassandra:1.0.0
+    container_name: scalardl-schema-loader-cassandra
+    environment:
+      - CASSANDRA_HOST=cassandra
+      - CASSANDRA_PORT=9042
+      - CASSANDRA_REPLICATION_FACTOR=1
+
+  scalar-ledger:
+    image: ghcr.io/scalar-labs/scalar-ledger:2.1.0
+    container_name: scalar-ledger
+    depends_on:
+      - cassandra
+    environment:
+      - SCALAR_DB_CONTACT_POINTS=cassandra
+      - SCALAR_DB_STORAGE=cassandra
+      - SCALAR_DL_LEDGER_PROOF_ENABLED=true
+      - SCALAR_DL_LEDGER_PROOF_PRIVATE_KEY_PATH=/key.pem
+    volumes:
+      - ./fixture/ledger.key:/key.pem
+    command: |
+      dockerize -template ledger.properties.tmpl:ledger.properties
+      -template log4j.properties.tmpl:log4j.properties
+      -wait tcp://cassandra:9042 -timeout 60s
+      ./bin/scalar-ledger --config ledger.properties
+
+  envoy:
+    image: envoyproxy/envoy:v1.12.7
+    container_name: envoy
+    ports:
+      - 50051:50051
+      - 50052:50052
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+    depends_on:
+      - scalar-ledger
+    command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml
+
+volumes:
+  cassandra:
+    name: cassandra
+
+networks:
+  default:
+    name: scalar-network
