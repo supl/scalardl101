@@ -7,4 +7,4 @@ build/
 Deposit.class
 Withdraw.class
 bin/
-History.class NotGood.class Ok.class
+*.class
