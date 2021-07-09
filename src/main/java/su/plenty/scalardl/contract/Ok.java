@@ -12,8 +12,11 @@ public class Ok extends Contract {
     if (argument.containsKey("id")) {
       String id = argument.getString("id");
 
-      JsonObject value = Json.createObjectBuilder().add("state", "ok")
-          .add("timestamp", System.currentTimeMillis() / 1000).build();
+      JsonObject value =
+          Json.createObjectBuilder()
+              .add("state", "ok")
+              .add("timestamp", System.currentTimeMillis() / 1000)
+              .build();
 
       ledger.get(id);
       ledger.put(id, value);
