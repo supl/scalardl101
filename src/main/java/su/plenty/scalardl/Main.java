@@ -1,91 +1,98 @@
 package su.plenty.scalardl;
 
 import java.io.FileInputStream;
-import java.io.StringReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Optional;
 import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.scalar.client.config.ClientConfig;
-import com.scalar.client.service.ClientModule;
-import com.scalar.client.service.ClientService;
-import com.scalar.client.service.StatusCode;
-import com.scalar.rpc.ledger.ContractExecutionResponse;
-import com.scalar.rpc.ledger.LedgerServiceResponse;
+import com.scalar.dl.client.config.ClientConfig;
+import com.scalar.dl.client.service.ClientModule;
+import com.scalar.dl.client.service.ClientService;
+import com.scalar.dl.ledger.model.ContractExecutionResult;
 
 class Main {
-    public static void main(String[] args) {
-        try {
-            ClientConfig config = new ClientConfig(new FileInputStream("client.properties"));
-            Injector injector = Guice.createInjector(new ClientModule(config));
-            try (ClientService clientService = injector.getInstance(ClientService.class)) {
-                registerCertificate(clientService);
-                registerContract(clientService);
+    static ClientService service;
 
-                executeContractDeposit(clientService, "plenty", 100);
-                executeContractDeposit(clientService, "plenty", 200);
-                executeContractWithdraw(clientService, "plenty", 50);
-            }
+    public static void main(String[] args) throws Exception {
+        if (args.length != 2) {
+            return;
+        }
+
+        ClientConfig config = new ClientConfig(new FileInputStream("client.properties"));
+        Injector injector = Guice.createInjector(new ClientModule(config));
+        service = injector.getInstance(ClientService.class);
+
+        try {
+            service.registerCertificate();
         } catch (Exception e) {
-            System.err.println(e.getMessage());
+        }
+
+        switch (args[0]) {
+            case "ok":
+                ok(args[1]);
+                break;
+            case "notgood":
+                notgood(args[1]);
+                break;
+
+            case "history":
+                history(args[1]);
+                break;
         }
 
         return;
     }
 
-    private static void registerCertificate(ClientService clientService) throws Exception {
-        LedgerServiceResponse response = clientService.registerCertificate();
-        if (response.getStatus() == StatusCode.CERTIFICATE_ALREADY_REGISTERED.get()) {
+    private static void ok(String id) {
+        try {
+            service.registerContract("ok", "su.plenty.scalardl.contract.Ok", "Ok.class",
+                    Optional.empty());
+        } catch (Exception e) {
+        }
+
+        JsonObject argument = Json.createObjectBuilder().add("id", id).build();
+        service.executeContract("ok", argument);
+    }
+
+    private static void notgood(String id) {
+        try {
+            service.registerContract("notgood", "su.plenty.scalardl.contract.NotGood",
+                    "NotGood.class", Optional.empty());
+        } catch (Exception e) {
+        }
+
+        JsonObject argument = Json.createObjectBuilder().add("id", id).build();
+        service.executeContract("notgood", argument);
+    }
+
+    private static void history(String id) {
+        try {
+            service.registerContract("history", "su.plenty.scalardl.contract.History",
+                    "History.class", Optional.empty());
+        } catch (Exception e) {
+        }
+
+        JsonObject argument = Json.createObjectBuilder().add("id", id).build();
+        ContractExecutionResult result = service.executeContract("history", argument);
+
+        if (!result.getResult().isPresent()) {
             return;
         }
 
-        if (response.getStatus() != StatusCode.OK.get()) {
-            throw new Exception(response.getStatus() + " " + response.getMessage());
-        }
-    }
+        JsonArray history = result.getResult().get().getJsonArray("history");
+        System.out.println("Check History");
 
-    private static void registerContract(ClientService clientService) throws Exception {
-        LedgerServiceResponse response;
-        response = clientService.registerContract("withdraw", "su.plenty.scalardl.contract.Withdraw", "Withdraw.class", Optional.empty());
-        if ((response.getStatus() != StatusCode.OK.get()) && (response.getStatus() != StatusCode.CONTRACT_ALREADY_REGISTERED.get())) {
-            throw new Exception(response.getStatus() + " " + response.getMessage());
-        }
-        System.out.println("contract withdraw registered");
+        history.forEach(h -> {
+            long timestamp = (long) h.asJsonObject().getInt("timestamp");
+            String state = h.asJsonObject().getString("state");
+            String datetime =
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp * 1000));
 
-        response = clientService.registerContract("deposit", "su.plenty.scalardl.contract.Deposit", "Deposit.class", Optional.empty());
-        if ((response.getStatus() != StatusCode.OK.get()) && (response.getStatus() != StatusCode.CONTRACT_ALREADY_REGISTERED.get())) {
-            throw new Exception(response.getStatus() + " " + response.getMessage());
-        }
-        System.out.println("contract deposit registered");
-    }
-
-    private static void executeContractDeposit(ClientService clientService, String account, int amount) throws Exception {
-        JsonObject argument = Json.createObjectBuilder().add("account", account).add("amount", amount).build();
-        ContractExecutionResponse response = clientService.executeContract("deposit", argument);
-        if (response.getStatus() != StatusCode.OK.get()) {
-            throw new Exception(response.getStatus() + " " + response.getMessage());
-        }
-        System.out.println("deposited " + amount + " to " + account);
-
-        JsonReader reader = Json.createReader(new StringReader(response.getResult()));
-        int balance = reader.readObject().getInt("balance");
-        reader.close();
-        System.out.println("balance = " + balance);
-    }
-
-    private static void executeContractWithdraw(ClientService clientService, String account, int amount) throws Exception {
-        JsonObject argument = Json.createObjectBuilder().add("account", account).add("amount", amount).build();
-        ContractExecutionResponse response = clientService.executeContract("withdraw", argument);
-        if (response.getStatus() != StatusCode.OK.get()) {
-            throw new Exception(response.getStatus() + " " + response.getMessage());
-        }
-        System.out.println("withdrawed " + amount + " from " + account);
-
-        JsonReader reader = Json.createReader(new StringReader(response.getResult()));
-        int balance = reader.readObject().getInt("balance");
-        reader.close();
-        System.out.println("balance = " + balance);
+            System.out.println(datetime + ": " + state);
+        });
     }
 }
