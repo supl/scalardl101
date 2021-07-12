@@ -11,15 +11,18 @@ services:
       - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
 
   scalardl-schema-loader-cassandra:
-    image: ghcr.io/scalar-labs/scalardl-schema-loader-cassandra:1.0.0
+    image: ghcr.io/scalar-labs/scalardl-schema-loader-cassandra:3.0.0
     container_name: scalardl-schema-loader-cassandra
-    environment:
-      - CASSANDRA_HOST=cassandra
-      - CASSANDRA_PORT=9042
-      - CASSANDRA_REPLICATION_FACTOR=1
+    command:
+      - "--cassandra"
+      - "-h"
+      - "cassandra"
+      - "-R"
+      - "1"
+    restart: on-failure
 
   scalar-ledger:
-    image: ghcr.io/scalar-labs/scalar-ledger:2.1.0
+    image: ghcr.io/scalar-labs/scalar-ledger:3.0.0
     container_name: scalar-ledger
     depends_on:
       - cassandra
