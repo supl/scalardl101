@@ -10,9 +10,22 @@ services:
       - CASSANDRA_DC=dc1
       - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
 
-  scalardl-schema-loader:
+  scalardl-schema-loader-auditor:
     image: ghcr.io/scalar-labs/scalardl-schema-loader:3.0.0
-    container_name: scalardl-schema-loader
+    container_name: scalardl-schema-loader-auditor
+    command:
+      - "--cassandra"
+      - "-h"
+      - "cassandra"
+      - "-R"
+      - "1"
+      - "-f"
+      - "auditor-schema.json"
+    restart: on-failure
+
+  scalardl-schema-loader-ledger:
+    image: ghcr.io/scalar-labs/scalardl-schema-loader:3.0.0
+    container_name: scalardl-schema-loader-ledger
     command:
       - "--cassandra"
       - "-h"
@@ -31,6 +44,7 @@ services:
       - SCALAR_DB_STORAGE=cassandra
       - SCALAR_DL_LEDGER_PROOF_ENABLED=true
       - SCALAR_DL_LEDGER_PROOF_PRIVATE_KEY_PATH=/key.pem
+      - SCALAR_DL_LEDGER_AUDITOR_ENABLED=true
     volumes:
       - ./fixture/ledger.key:/key.pem
     command: |
@@ -39,9 +53,9 @@ services:
       -wait tcp://cassandra:9042 -timeout 60s
       ./bin/scalar-ledger --config ledger.properties
 
-  envoy:
+  envoy-ledger:
     image: envoyproxy/envoy:v1.12.7
-    container_name: envoy
+    container_name: envoy-ledger
     ports:
       - 50051:50051
       - 50052:50052
@@ -50,6 +64,82 @@ services:
     depends_on:
       - scalar-ledger
     command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml
+
+  scalar-auditor:
+    image: ghcr.io/scalar-labs/scalar-auditor:3.0.1
+    container_name: "scalar-auditor"
+    volumes:
+      - ./fixture/auditor.key:/key.pem
+      - ./fixture/auditor.cert:/cert.pem
+    depends_on:
+      - cassandra
+    environment:
+      - SCALAR_DB_CONTACT_POINTS=cassandra
+      - SCALAR_DB_STORAGE=cassandra
+      - SCALAR_DL_AUDITOR_LEDGER_HOST=envoy-ledger
+      - SCALAR_DL_AUDITOR_PRIVATE_KEY_PATH=/key.pem
+      - SCALAR_DL_AUDITOR_CERT_PATH=/cert.pem
+    command: |
+      dockerize -template auditor.properties.tmpl:auditor.properties
+      -template log4j.properties.tmpl:log4j.properties
+      -wait tcp://cassandra:9042 -timeout 60s
+      ./bin/scalar-auditor --config auditor.properties
+
+  envoy-auditor:
+    image: envoyproxy/envoy:v1.12.7
+    container_name: "envoy-auditor"
+    ports:
+      - 40051:40051
+      - 40052:40052
+    volumes:
+      - ./envoy-auditor.yaml:/etc/envoy/envoy.yaml
+    depends_on:
+      - scalar-auditor
+    command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml
+
+  scalar-client-ledger:
+    image: ghcr.io/scalar-labs/scalar-client:3.0.1
+    container_name: scalar-client-ledger
+    volumes:
+      - ./fixture/ledger.cert:/cert.pem
+      - ./fixture/ledger.key:/key.pem
+    depends_on:
+      - envoy-ledger
+      - envoy-auditor
+    environment:
+      - SCALAR_DL_CLIENT_SERVER_HOST=envoy-ledger
+      - SCALAR_DL_CLIENT_AUDITOR_HOST=envoy-auditor
+      - SCALAR_DL_CLIENT_AUDITOR_ENABLED=true
+      - SCALAR_DL_CLIENT_CERT_HOLDER_ID=ledger
+      - SCALAR_DL_CLIENT_CERT_PATH=/cert.pem
+      - SCALAR_DL_CLIENT_PRIVATE_KEY_PATH=/key.pem
+    command: |
+      dockerize -template client.properties.tmpl:client.properties
+      -template log4j.properties.tmpl:log4j.properties
+      ./client/bin/register-cert --config client.properties
+    restart: on-failure:5
+
+  scalar-client-auditor:
+    image: ghcr.io/scalar-labs/scalar-client:3.0.1
+    container_name: scalar-client-auditor
+    volumes:
+      - ./fixture/auditor.cert:/cert.pem
+      - ./fixture/auditor.key:/key.pem
+    depends_on:
+      - envoy-ledger
+      - envoy-auditor
+    environment:
+      - SCALAR_DL_CLIENT_SERVER_HOST=envoy-ledger
+      - SCALAR_DL_CLIENT_AUDITOR_HOST=envoy-auditor
+      - SCALAR_DL_CLIENT_AUDITOR_ENABLED=true
+      - SCALAR_DL_CLIENT_CERT_HOLDER_ID=auditor
+      - SCALAR_DL_CLIENT_CERT_PATH=/cert.pem
+      - SCALAR_DL_CLIENT_PRIVATE_KEY_PATH=/key.pem
+    command: |
+      dockerize -template client.properties.tmpl:client.properties
+      -template log4j.properties.tmpl:log4j.properties
+      ./client/bin/register-cert --config client.properties
+    restart: on-failure:5
 
 volumes:
   cassandra:
