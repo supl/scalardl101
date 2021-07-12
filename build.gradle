@@ -11,7 +11,7 @@ dependencies {
 }
 
 application {
-    mainClassName = 'su.plenty.scalardl.Main'
+    mainClass = 'su.plenty.scalardl.Main'
 }
 
 task copyContracts(type: Copy) {
