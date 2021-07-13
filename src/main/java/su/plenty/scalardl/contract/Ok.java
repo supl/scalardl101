@@ -9,14 +9,12 @@ import javax.json.JsonObject;
 public class Ok extends Contract {
   @Override
   public JsonObject invoke(Ledger ledger, JsonObject argument, Optional<JsonObject> properties) {
-    if (argument.containsKey("id")) {
+    if (argument.containsKey("id") && argument.containsKey("timestamp")) {
       String id = argument.getString("id");
+      long timestamp = (long) argument.getInt("timestamp");
 
       JsonObject value =
-          Json.createObjectBuilder()
-              .add("state", "ok")
-              .add("timestamp", System.currentTimeMillis() / 1000)
-              .build();
+          Json.createObjectBuilder().add("state", "ok").add("timestamp", timestamp).build();
 
       ledger.get(id);
       ledger.put(id, value);

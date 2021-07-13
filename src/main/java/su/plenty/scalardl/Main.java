@@ -49,30 +49,32 @@ class Main {
 
   private static void ok(String id) {
     try {
-      service.registerContract(
-          "ok", "su.plenty.scalardl.contract.Ok", "Ok.class", Optional.empty());
+      service.registerContract("ok", "su.plenty.scalardl.contract.Ok", "Ok.class",
+          Optional.empty());
     } catch (Exception e) {
     }
 
-    JsonObject argument = Json.createObjectBuilder().add("id", id).build();
+    JsonObject argument = Json.createObjectBuilder().add("id", id)
+        .add("timestamp", System.currentTimeMillis() / 1000).build();
     service.executeContract("ok", argument);
   }
 
   private static void notgood(String id) {
     try {
-      service.registerContract(
-          "notgood", "su.plenty.scalardl.contract.NotGood", "NotGood.class", Optional.empty());
+      service.registerContract("notgood", "su.plenty.scalardl.contract.NotGood", "NotGood.class",
+          Optional.empty());
     } catch (Exception e) {
     }
 
-    JsonObject argument = Json.createObjectBuilder().add("id", id).build();
+    JsonObject argument = Json.createObjectBuilder().add("id", id)
+        .add("timestamp", System.currentTimeMillis() / 1000).build();
     service.executeContract("notgood", argument);
   }
 
   private static void history(String id) {
     try {
-      service.registerContract(
-          "history", "su.plenty.scalardl.contract.History", "History.class", Optional.empty());
+      service.registerContract("history", "su.plenty.scalardl.contract.History", "History.class",
+          Optional.empty());
     } catch (Exception e) {
     }
 
@@ -86,14 +88,13 @@ class Main {
     JsonArray history = result.getResult().get().getJsonArray("history");
     System.out.println("Check History");
 
-    history.forEach(
-        h -> {
-          long timestamp = (long) h.asJsonObject().getInt("timestamp");
-          String state = h.asJsonObject().getString("state");
-          String datetime =
-              new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp * 1000));
+    history.forEach(h -> {
+      long timestamp = (long) h.asJsonObject().getInt("timestamp");
+      String state = h.asJsonObject().getString("state");
+      String datetime =
+          new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestamp * 1000));
 
-          System.out.println(datetime + ": " + state);
-        });
+      System.out.println(datetime + ": " + state);
+    });
   }
 }
