@@ -1,6 +1,8 @@
 #!/bin/sh
 
 while [ $? -eq 0 ]; do
-    ./build/install/scalardl101/bin/scalardl101 ok `date +%s`
+    ASSET=`date +%s`
+    echo "Put asset: $ASSET"
+    ./build/install/scalardl101/bin/scalardl101 ok $ASSET
 done
 
