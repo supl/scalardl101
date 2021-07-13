@@ -26,11 +26,11 @@ Two executables will be outputed in
 ### Log an expense
 
 ```
-./expense/build/install/scalardl101/bin/expense <amount> <log>
+./expense/build/install/expense/bin/expense <amount> <log>
 ```
 
 ### Check some day's expenses
 
 ```
-./review/build/install/scalardl101/bin/review <yyyymmdd>
+./review/build/install/review/bin/review <yyyymmdd>
 ```
