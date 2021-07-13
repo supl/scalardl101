@@ -1,0 +1,24 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    implementation group: 'com.google.inject', name: 'guice', version: '5.0.1'
+    implementation group: 'com.scalar-labs', name: 'scalardl-java-client-sdk', version: '3.0.1'
+}
+
+application {
+    applicationName = "review"
+    mainClass = 'su.plenty.scalardl.Review'
+}
+
+task copyContracts(type: Copy) {
+    from "$buildDir/classes/java/main/su/plenty/scalardl/contract"
+    include "*.class"
+    into ".."
+}
+
+assemble.finalizedBy copyContracts

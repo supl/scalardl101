@@ -11,13 +11,14 @@ dependencies {
 }
 
 application {
-    mainClass = 'su.plenty.scalardl.Main'
+    applicationName = "expense"
+    mainClass = 'su.plenty.scalardl.Expense'
 }
 
 task copyContracts(type: Copy) {
     from "$buildDir/classes/java/main/su/plenty/scalardl/contract"
     include "*.class"
-    into "."
+    into ".."
 }
 
 assemble.finalizedBy copyContracts

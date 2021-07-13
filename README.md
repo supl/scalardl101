@@ -1,8 +1,5 @@
 # Introduction
-This CLI is used in the crab supply chain.
-A crab denoted by `id` will be checked by fishers, cooperatives, sellers, ...etc.
-The checked results can be committed into the ledger.
-All check history of a crab can be traced.
+This CLI is used to record my daily expenses.
 
 # Setup
 This CLI needs a Scalar DL network to work. Start a local Scalar DL network by running
@@ -21,21 +18,19 @@ Then, do
 make
 ```
 
-The executables will be outputed in `build/install/scalardl101/bin/scalardl101`
+Two executables will be outputed in
+- `./expense/build/install/expense/bin/expense`
+- `./review/build/install/review/bin/review`
 
 # Use
-### Check "OK" for a crab
+### Log an expense
 
 ```
-build/install/scalardl101/bin/scalardl101 ok <id>
+./expense/build/install/scalardl101/bin/expense <amount> <log>
 ```
 
-### Check "Not Good" for a crab
-```
-build/install/scalardl101/bin/scalardl101 notgood <id>
-```
+### Check some day's expenses
 
-### Trace all checks of a crab
 ```
-build/install/scalardl101/bin/scalardl101 history <id>
+./review/build/install/scalardl101/bin/review <yyyymmdd>
 ```
