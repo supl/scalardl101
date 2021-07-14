@@ -11,7 +11,8 @@ import javax.json.JsonObject;
 public class Expense extends Contract {
   @Override
   public JsonObject invoke(Ledger ledger, JsonObject argument, Optional<JsonObject> properties) {
-    if (argument.containsKey("date") && argument.containsKey("expense")
+    if (argument.containsKey("date")
+        && argument.containsKey("expense")
         && argument.containsKey("log")) {
       String date = argument.getString("date");
       String log = argument.getString("log");
@@ -27,8 +28,11 @@ public class Expense extends Contract {
         int newTotal = value.getInt("total") + expense;
         JsonArray expenses =
             Json.createArrayBuilder(value.getJsonArray("expenses")).add(newExpense).build();
-        value = Json.createObjectBuilder(value).add("expenses", expenses).add("total", newTotal)
-            .build();
+        value =
+            Json.createObjectBuilder(value)
+                .add("expenses", expenses)
+                .add("total", newTotal)
+                .build();
       } else {
         JsonArray expenses = Json.createArrayBuilder().add(newExpense).build();
         value = Json.createObjectBuilder().add("expenses", expenses).add("total", expense).build();
