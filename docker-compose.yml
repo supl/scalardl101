@@ -67,7 +67,7 @@ services:
 
   scalar-auditor:
     image: ghcr.io/scalar-labs/scalar-auditor:3.0.1
-    container_name: "scalar-auditor"
+    container_name: scalar-auditor
     volumes:
       - ./fixture/auditor.key:/key.pem
       - ./fixture/auditor.cert:/cert.pem
@@ -87,7 +87,7 @@ services:
 
   envoy-auditor:
     image: envoyproxy/envoy:v1.12.7
-    container_name: "envoy-auditor"
+    container_name: envoy-auditor
     ports:
       - 40051:40051
       - 40052:40052
